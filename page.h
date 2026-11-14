@@ -1,0 +1,195 @@
+const char PAGE[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Từ trường – Vật lí 12 · Phygital Lab</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--fg:#14202b;--mut:#5b6a78;--line:#dce2e8;--b:#0b7285;--f:#d9480f;--ok:#2b8a3e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1519;--card:#18222a;--fg:#e8eef3;--mut:#93a3b1;--line:#2a3640;--b:#3bc9db;--f:#ff922b;--ok:#69db7c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1519;--card:#18222a;--fg:#e8eef3;--mut:#93a3b1;--line:#2a3640;--b:#3bc9db;--f:#ff922b;--ok:#69db7c;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,"Segoe UI",Roboto,Arial,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:16px;display:grid;gap:12px}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+h1{font-size:21px;margin:0}h2{font-size:14px;margin:0 0 8px;font-weight:600}
+.sub{color:var(--mut);font-size:13px;margin:0}
+.c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.g{display:grid;gap:12px}.g6{grid-template-columns:repeat(auto-fit,minmax(135px,1fr))}.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.k small{color:var(--mut);display:block}.k b{font-size:26px;font-variant-numeric:tabular-nums}.k i{font-style:normal;color:var(--mut);margin-left:4px;font-size:13px}
+.r{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+input,select,button,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+input[type=number]{width:84px}#ip{width:200px}button{cursor:pointer}
+button.p{background:var(--b);color:var(--bg);border-color:var(--b);font-weight:600}
+:focus-visible{outline:2px solid var(--b);outline-offset:2px}
+.pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:99px;padding:3px 12px;font-size:13px;background:var(--card)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--mut)}.on .dot{background:var(--ok)}
+canvas{width:100%;height:210px;display:block}
+.st{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-variant-numeric:tabular-nums;margin:0}.st dt{color:var(--mut)}.st dd{margin:0;text-align:right;font-weight:600}
+code{font:12px ui-monospace,Consolas,monospace;background:var(--bg);padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div><h1>🧲 Từ trường – Vật lí 12</h1><p class="sub">Bộ thí nghiệm kết nối không dây theo hướng Phygital Learning</p></div>
+<span class="pill" id="pill"><i class="dot"></i><span id="stt">Chưa kết nối</span></span>
+</header>
+
+<section class="c">
+<h2>Kết nối thiết bị ESP32</h2>
+<div class="r">
+<select id="mode" aria-label="Chế độ kết nối"><option value="demo">Mô phỏng (Demo)</option><option value="ws">Wi-Fi (WebSocket)</option><option value="ser">USB (Web Serial)</option></select>
+<input id="ip" placeholder="192.168.4.1:81" aria-label="Địa chỉ ESP32">
+<button class="p" id="go">Kết nối</button>
+</div>
+<p class="sub" id="hint" style="margin-top:8px"></p>
+<p class="sub" style="margin-top:4px">Định dạng dữ liệu: mỗi tin nhắn hoặc dòng một JSON <code>{"Bx":1.2,"By":40.5,"Bz":-0.3,"F":2.1}</code> (B tính bằng mT, F tính bằng mN; cảm biến một trục gửi <code>{"B":40.5,"F":2.1}</code>) hoặc CSV <code>Bx,By,Bz,F</code>.</p>
+</section>
+
+<section class="g g6">
+<div class="c k"><small>Cảm ứng từ B</small><b id="vB" style="color:var(--b)">–</b><i>mT</i></div>
+<div class="c k"><small>Bx</small><b id="vx">–</b><i>mT</i></div>
+<div class="c k"><small>By</small><b id="vy">–</b><i>mT</i></div>
+<div class="c k"><small>Bz</small><b id="vz">–</b><i>mT</i></div>
+<div class="c k"><small>Lực từ F (đo)</small><b id="vF" style="color:var(--f)">–</b><i>mN</i></div>
+<div class="c k"><small>F lí thuyết</small><b id="vL">–</b><i>mN</i></div>
+</section>
+
+<section class="g g2">
+<div class="c"><h2><span style="color:var(--b)">●</span> Cảm ứng từ B theo thời gian (mT)</h2><canvas id="cB" role="img" aria-label="Đồ thị B theo thời gian"></canvas></div>
+<div class="c"><h2><span style="color:var(--f)">●</span> Lực từ F theo thời gian (mN): nét liền là đo, nét đứt là lí thuyết</h2><canvas id="cF" role="img" aria-label="Đồ thị F theo thời gian"></canvas></div>
+</section>
+
+<section class="g g2">
+<div class="c">
+<h2>Lực từ lên đoạn dây: F = B·I·l·sinα</h2>
+<div class="r">
+<label>I <input id="I" type="number" value="1" step="0.1" min="0"> A</label>
+<label>l <input id="l" type="number" value="5" step="0.5" min="0"> cm</label>
+<label>Dòng điện theo <select id="dir"><option value="1,0,0">+x</option><option value="-1,0,0">−x</option><option value="0,1,0">+y</option><option value="0,-1,0">−y</option><option value="0,0,1">+z</option><option value="0,0,-1">−z</option></select></label>
+</div>
+<dl class="st" id="ex" style="margin-top:10px"></dl>
+<p class="sub" style="margin-top:8px">Trục x, y, z theo cảm biến từ trường (hệ tọa độ thuận). Quy tắc bàn tay trái tương đương F = I·l × B: đường sức từ xuyên vào lòng bàn tay, chiều từ cổ tay đến ngón giữa là chiều dòng điện, ngón cái choãi ra chỉ chiều lực từ.</p>
+</div>
+<div class="c">
+<h2>Hiệu chuẩn</h2>
+<div class="r">
+<label>Hệ số B <input id="kB" type="number" value="1" step="0.01"></label>
+<label>Hệ số F <input id="kF" type="number" value="1" step="0.01"></label>
+<button id="tare">Về 0 (B, F)</button>
+</div>
+<p class="sub" style="margin-top:6px">“Về 0” lấy số đọc hiện tại làm gốc để loại từ trường nền và độ trôi. Hệ số nhân dùng để khớp với thiết bị chuẩn.</p>
+<h2 style="margin-top:14px">Sai số (50 mẫu gần nhất)</h2>
+<dl class="st" id="sd"></dl>
+</div>
+</section>
+
+<section class="c">
+<div class="r"><button id="clr">Xóa dữ liệu</button><button id="exp">Xuất CSV</button><span class="sub" id="cnt">0 mẫu</span></div>
+<p class="sub" id="hp" hidden style="margin-top:8px">Sao chép nội dung bên dưới (Ctrl+C) rồi dán vào Excel hoặc Google Sheets.</p>
+<textarea id="ta" hidden readonly rows="6" style="width:100%;margin-top:6px" aria-label="Dữ liệu CSV"></textarea>
+</section>
+</main>
+
+<script>
+const $=i=>document.getElementById(i),f=(x,n=2)=>isFinite(x)?x.toFixed(n):'–',W=200,
+row=(a,b)=>'<dt>'+a+'</dt><dd>'+b+'</dd>',
+ms=a=>{const m=a.reduce((s,v)=>s+v,0)/a.length;return[m,Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/Math.max(a.length-1,1))]},
+ST=(on,t)=>{$('pill').className='pill'+(on?' on':'');$('stt').textContent=t},
+H={demo:'Dữ liệu giả lập để thử giao diện, không cần phần cứng.',ws:'Nhập IP:cổng của ESP32 (chế độ AP thường là 192.168.4.1:81). Trang https (như trên Google) bị trình duyệt chặn ws://: hãy cho phép “Nội dung không an toàn” cho trang, hoặc mở trang do chính ESP32 phát tại http://192.168.4.1.',ser:'Cắm cáp USB, chọn cổng COM của ESP32 (115200 baud). Dùng được trên Chrome hoặc Edge máy tính.'};
+let D=[],o={x:0,y:0,z:0,F:0},last={x:0,y:0,z:0,F:0},t0=0,tm=null,ws=null,port=null,rd=null,done=null,pend=false;
+
+function push(d){
+ const g=k=>Number.isFinite(+d[k])?+d[k]:0;
+ last={x:g('Bx'),y:('By' in d)?g('By'):g('B'),z:g('Bz'),F:g('F')};
+ const kb=+$('kB').value||1,kf=+$('kF').value||1,
+  x=(last.x-o.x)*kb,y=(last.y-o.y)*kb,z=(last.z-o.z)*kb,F=(last.F-o.F)*kf,
+  L=$('dir').value.split(',').map(Number),
+  n=[L[1]*z-L[2]*y,L[2]*x-L[0]*z,L[0]*y-L[1]*x],c=Math.hypot(...n),
+  I=+$('I').value||0,l=+$('l').value||0;
+ if(!t0)t0=performance.now();
+ D.push({t:(performance.now()-t0)/1e3,x,y,z,B:Math.hypot(x,y,z),F,Flt:c*I*l/100,n,a:Math.atan2(c,L[0]*x+L[1]*y+L[2]*z)*180/Math.PI});
+ if(D.length>5000)D.shift();
+ if(!pend){pend=true;requestAnimationFrame(ui)}
+}
+function feed(s){s=s.trim();if(!s)return;try{if(s[0]=='{')push(JSON.parse(s));else{const a=s.split(',').map(Number);if(a.length>=4&&a.every(isFinite))push({Bx:a[0],By:a[1],Bz:a[2],F:a[3]})}}catch(e){}}
+
+function ui(){
+ pend=false;const p=D[D.length-1];if(!p)return;
+ [['vB',p.B],['vx',p.x],['vy',p.y],['vz',p.z],['vF',p.F],['vL',p.Flt]].forEach(([i,v])=>$(i).textContent=f(v));
+ const m=Math.hypot(...p.n),k=p.n.map(Math.abs),j=k.indexOf(Math.max(...k)),ok=m>1e-9;
+ $('ex').innerHTML=row('Góc α giữa dòng điện và B',f(p.a,1)+'°')+row('sin α',f(Math.sin(p.a*Math.PI/180),3))
+  +row('Phương lực từ',ok?'trục '+'xyz'[j]:'–')+row('Chiều lực từ',ok?(p.n[j]>0?'+':'−')+'xyz'[j]:'–')
+  +row('Vectơ đơn vị của F',ok?'('+p.n.map(v=>f(v/m)).join('; ')+')':'–');
+ const s=D.slice(-50),[mB,sB]=ms(s.map(q=>q.B)),[mF,sF]=ms(s.map(q=>q.F)),[mL]=ms(s.map(q=>q.Flt)),dF=Math.abs(mF-mL);
+ $('sd').innerHTML=row('B',f(mB)+' ± '+f(sB)+' mT')+row('F đo',f(mF)+' ± '+f(sF)+' mN')+row('F lí thuyết',f(mL)+' mN')
+  +row('ΔF = |F đo − F lí thuyết|',f(dF)+' mN')+row('δF = ΔF / F lí thuyết',mL>1e-9?f(100*dF/mL,1)+' %':'–');
+ $('cnt').textContent=D.length+' mẫu';
+ plot($('cB'),[{k:'B',c:'--b'}]);plot($('cF'),[{k:'F',c:'--f'},{k:'Flt',c:'--f',d:1}]);
+}
+
+function plot(cv,S){
+ const r=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;cv.width=w*r;cv.height=h*r;
+ const g=cv.getContext('2d'),cs=getComputedStyle(document.documentElement),C=n=>cs.getPropertyValue(n).trim(),N=D.slice(-W);
+ g.scale(r,r);if(N.length<2)return;
+ let lo=1/0,hi=-1/0;S.forEach(s=>N.forEach(p=>{lo=Math.min(lo,p[s.k]);hi=Math.max(hi,p[s.k])}));
+ if(hi-lo<1e-6){hi+=1;lo-=1}const e=(hi-lo)*.1;lo-=e;hi+=e;
+ const a=N[0].t,b=N[N.length-1].t,X=t=>44+(w-54)*(t-a)/((b-a)||1),Y=v=>h-22-(h-32)*(v-lo)/(hi-lo);
+ g.font='11px system-ui,sans-serif';g.lineWidth=1;
+ for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,y=Y(v);g.strokeStyle=C('--line');g.beginPath();g.moveTo(44,y);g.lineTo(w-10,y);g.stroke();g.fillStyle=C('--mut');g.textAlign='right';g.fillText(v.toFixed(1),40,y+4)}
+ g.textAlign='left';g.fillText(a.toFixed(1)+' s',44,h-6);g.textAlign='right';g.fillText(b.toFixed(1)+' s',w-10,h-6);
+ S.forEach(s=>{g.strokeStyle=C(s.c);g.lineWidth=2;g.setLineDash(s.d?[6,4]:[]);g.beginPath();N.forEach((p,i)=>g[i?'lineTo':'moveTo'](X(p.t),Y(p[s.k])));g.stroke()});
+ g.setLineDash([]);
+}
+
+async function stop(){
+ clearInterval(tm);tm=null;
+ if(ws){ws.onclose=ws.onerror=null;ws.close();ws=null}
+ if(rd){try{await rd.cancel()}catch(e){}rd=null;try{await done}catch(e){}try{await port.close()}catch(e){}port=null}
+ ST(false,'Chưa kết nối');$('go').textContent='Kết nối';
+}
+async function start(){
+ await stop();const m=$('mode').value;
+ if(m=='demo'){
+  let k=0;
+  tm=setInterval(()=>{k+=.1;const R=()=>Math.random()-.5,x=5*Math.sin(.5*k),y=40+25*Math.sin(.4*k),z=3*Math.cos(.3*k),
+   L=$('dir').value.split(',').map(Number),n=[L[1]*z-L[2]*y,L[2]*x-L[0]*z,L[0]*y-L[1]*x],I=+$('I').value||0,l=+$('l').value||0;
+   push({Bx:x+R(),By:y+R(),Bz:z+R(),F:1.03*Math.hypot(...n)*I*l/100+.1*R()})},100);
+  ST(true,'Đang chạy Demo');$('go').textContent='Ngắt';
+ }else if(m=='ws'){
+  ST(false,'Đang kết nối…');
+  try{ws=new WebSocket('ws://'+$('ip').value.trim())}catch(e){ST(false,location.protocol=='https:'?'Trình duyệt chặn ws:// trên trang https':'Địa chỉ không hợp lệ');return}
+  ws.onopen=()=>{ST(true,'Đã kết nối Wi-Fi');$('go').textContent='Ngắt'};
+  ws.onmessage=e=>String(e.data).split('\n').forEach(feed);
+  ws.onclose=ws.onerror=()=>{ST(false,'Không kết nối được');$('go').textContent='Kết nối';ws=null};
+ }else{
+  if(!navigator.serial){ST(false,'Trình duyệt không hỗ trợ Web Serial');return}
+  try{
+   port=await navigator.serial.requestPort();await port.open({baudRate:115200});
+   const dec=new TextDecoderStream();done=port.readable.pipeTo(dec.writable);rd=dec.readable.getReader();
+   ST(true,'Đã kết nối USB');$('go').textContent='Ngắt';
+   let buf='';
+   for(;;){const{value,done:dn}=await rd.read();if(dn)break;buf+=value;let i;while((i=buf.indexOf('\n'))>=0){feed(buf.slice(0,i));buf=buf.slice(i+1)}}
+  }catch(e){ST(false,'Không mở được cổng USB')}
+ }
+}
+
+$('go').onclick=()=>$('go').textContent=='Kết nối'?start():stop();
+$('mode').onchange=()=>{$('hint').textContent=H[$('mode').value];$('ip').hidden=$('mode').value!='ws';$('mode').value=='demo'?start():stop()};
+$('tare').onclick=()=>{o={...last}};
+$('clr').onclick=()=>{D=[];t0=0;plot($('cB'),[]);plot($('cF'),[]);$('cnt').textContent='0 mẫu'};
+$('exp').onclick=()=>{
+ const t='t_s,Bx_mT,By_mT,Bz_mT,B_mT,F_do_mN,F_lt_mN\n'+D.map(p=>[p.t,p.x,p.y,p.z,p.B,p.F,p.Flt].map(v=>v.toFixed(4)).join(',')).join('\n');
+ $('hp').hidden=$('ta').hidden=false;$('ta').value=t;$('ta').select();
+ try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='tu-truong.csv';a.click()}catch(e){}
+};
+addEventListener('resize',ui);
+$('ip').value=location.protocol=='http:'?location.hostname+':81':'192.168.4.1:81';
+$('mode').onchange();
+</script>
+</body>
+</html>
+)rawliteral";
